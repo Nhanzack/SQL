@@ -1,9 +1,220 @@
-import mysql.connector
-
-mydb = mysql.connector.connect(
-  host="localhost",
-  user="yourusername",
-  password="yourpassword"
+--
+USE MASTER
+GO
+--
+IF EXISTS (SELECT NAME FROM SYS.DATABASES WHERE NAME='QLBH')
+	DROP DATABASE QLBH
+GO
+-- Nhớ chỉnh lại đường dẫn
+CREATE DATABASE QLBH
+ON(NAME='QLBH_DATA',FILENAME='D:\SQL\QLBH.MDF')
+LOG ON(NAME='QLBH_LOG',FILENAME='D:\SQL\QLBH.LDF')
+GO 
+--
+USE QLBH
+GO
+--
+CREATE TABLE KHACHHANG
+(
+	MAKH VARCHAR(5) PRIMARY KEY NOT NULL,
+	TENKH NVARCHAR (30) NOT NULL,
+	DIACHI NVARCHAR (50) NULL,
+	DT VARCHAR (11) 
+		CHECK( DT LIKE '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+			 OR DT LIKE'[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+			OR DT LIKE '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+			OR DT LIKE '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'),
+	EMAIL VARCHAR (30)
 )
+GO
+--
+CREATE TABLE VATTU
+(
+	MAVT VARCHAR (5) PRIMARY KEY NOT NULL,
+	TENVT NVARCHAR (30) NOT NULL,
+	DVT NVARCHAR (20) NOT NULL,
+	GIAMUA MONEY NULL CHECK(GIAMUA>0),
+	SLTON INT NULL CHECK(SLTON>=0)
+)
+GO
+--
+CREATE TABLE HOADON
+(
+	MAHD VARCHAR (10) PRIMARY KEY NOT NULL,
+	NGAY SMALLDATETIME NULL CHECK(NGAY<GETDATE()), 
+	MAKH VARCHAR(5) NOT NULL,
+	TONGTG FLOAT NULL
+)
+GO
+--
+CREATE TABLE CTHD
+(
+	MAHD VARCHAR (10) NOT NULL,
+	MAVT VARCHAR (5) NOT NULL,
+	SL INT  NULL CHECK(SL>0),
+	KHUYENMAI FLOAT NULL,
+	GIABAN FLOAT NULL
+	PRIMARY KEY (MAHD,MAVT)
+)
+GO
+--
+ALTER TABLE HOADON
+	ADD CONSTRAINT FK_HOADON_KHACHHANG FOREIGN KEY (MAKH) REFERENCES KHACHHANG(MAKH) ON UPDATE CASCADE 
+GO
+--
+ALTER TABLE CTHD
+	ADD CONSTRAINT FK_CTHD_HOADON FOREIGN KEY (MAHD) REFERENCES HOADON(MAHD) ON UPDATE CASCADE,
+	    CONSTRAINT FK_CTHD_VATTU FOREIGN KEY (MAVT) REFERENCES VATTU(MAVT) ON UPDATE CASCADE
+GO
+--
 
-print(mydb)
+
+INSERT [dbo].[VATTU] ([MAVT], [TENVT], [DVT], [GIAMUA], [SLTON]) VALUES (N'VT01', N'Xi măng', N'Bao', 50000.0000, 4870)
+INSERT [dbo].[VATTU] ([MAVT], [TENVT], [DVT], [GIAMUA], [SLTON]) VALUES (N'VT02', N'Cát', N'Khối', 45000.0000, 49935)
+INSERT [dbo].[VATTU] ([MAVT], [TENVT], [DVT], [GIAMUA], [SLTON]) VALUES (N'VT03', N'Gạch ống', N'Viên', 120.0000, 740000)
+INSERT [dbo].[VATTU] ([MAVT], [TENVT], [DVT], [GIAMUA], [SLTON]) VALUES (N'VT04', N'Gạch thẻ', N'Viên', 110.0000, 750000)
+INSERT [dbo].[VATTU] ([MAVT], [TENVT], [DVT], [GIAMUA], [SLTON]) VALUES (N'VT05', N'Đá lớn', N'Khối', 25000.0000, 99980)
+INSERT [dbo].[VATTU] ([MAVT], [TENVT], [DVT], [GIAMUA], [SLTON]) VALUES (N'VT06', N'Đá nhỏ', N'Khối', 33000.0000, 99985)
+INSERT [dbo].[VATTU] ([MAVT], [TENVT], [DVT], [GIAMUA], [SLTON]) VALUES (N'VT07', N'Lam gió', N'Cái', 15000.0000, 49980)
+GO
+
+INSERT [dbo].[KHACHHANG] ([MAKH], [TENKH], [DIACHI], [DT], [EMAIL]) VALUES (N'KH01', N'Nguyễn Thị Bé', N'Tân Bình', N'38457895', N'bnt@yahoo.com')
+INSERT [dbo].[KHACHHANG] ([MAKH], [TENKH], [DIACHI], [DT], [EMAIL]) VALUES (N'KH02', N'Lê Hoàng Nam', N'Bình Chánh', N'39878987', N'namlehoang@gmail.com')
+INSERT [dbo].[KHACHHANG] ([MAKH], [TENKH], [DIACHI], [DT], [EMAIL]) VALUES (N'KH03', N'Trần Thị Chiêu', N'Tân Bình', N'38457895', NULL)
+INSERT [dbo].[KHACHHANG] ([MAKH], [TENKH], [DIACHI], [DT], [EMAIL]) VALUES (N'KH04', N'Mai Thị Quế Anh', N'Bình Chánh', NULL, NULL)
+INSERT [dbo].[KHACHHANG] ([MAKH], [TENKH], [DIACHI], [DT], [EMAIL]) VALUES (N'KH05', N'Lê Văn Sáng', N'Quận 10', NULL, N'sanglv@hcm.vnn.vn')
+INSERT [dbo].[KHACHHANG] ([MAKH], [TENKH], [DIACHI], [DT], [EMAIL]) VALUES (N'KH06', N'Trần Hoàng', N'Tân Bình', N'38457897', NULL)
+GO
+
+INSERT [dbo].[HOADON] ([MAHD], [NGAY], [MAKH], [TONGTG]) VALUES (N'HD001', CAST(N'2010-05-12 00:00:00' AS SmallDateTime), N'KH01', 560000)
+INSERT [dbo].[HOADON] ([MAHD], [NGAY], [MAKH], [TONGTG]) VALUES (N'HD002', CAST(N'2010-05-25 00:00:00' AS SmallDateTime), N'KH02', 1500000)
+INSERT [dbo].[HOADON] ([MAHD], [NGAY], [MAKH], [TONGTG]) VALUES (N'HD003', CAST(N'2010-05-25 00:00:00' AS SmallDateTime), N'KH01', 1100000)
+INSERT [dbo].[HOADON] ([MAHD], [NGAY], [MAKH], [TONGTG]) VALUES (N'HD004', CAST(N'2010-05-25 00:00:00' AS SmallDateTime), N'KH04', 9900000)
+INSERT [dbo].[HOADON] ([MAHD], [NGAY], [MAKH], [TONGTG]) VALUES (N'HD005', CAST(N'2010-05-26 00:00:00' AS SmallDateTime), N'KH04', 1165000)
+INSERT [dbo].[HOADON] ([MAHD], [NGAY], [MAKH], [TONGTG]) VALUES (N'HD006', CAST(N'2010-06-02 00:00:00' AS SmallDateTime), N'KH03', 1200000)
+INSERT [dbo].[HOADON] ([MAHD], [NGAY], [MAKH], [TONGTG]) VALUES (N'HD007', CAST(N'2010-06-22 00:00:00' AS SmallDateTime), N'KH04', 2500000)
+INSERT [dbo].[HOADON] ([MAHD], [NGAY], [MAKH], [TONGTG]) VALUES (N'HD008', CAST(N'2010-06-25 00:00:00' AS SmallDateTime), N'KH03', 6440000)
+INSERT [dbo].[HOADON] ([MAHD], [NGAY], [MAKH], [TONGTG]) VALUES (N'HD009', CAST(N'2010-08-15 00:00:00' AS SmallDateTime), N'KH04', 1200000)
+INSERT [dbo].[HOADON] ([MAHD], [NGAY], [MAKH], [TONGTG]) VALUES (N'HD010', CAST(N'2010-09-30 00:00:00' AS SmallDateTime), N'KH01', 1425000)
+GO
+
+INSERT [dbo].[CTHD] ([MAHD], [MAVT], [SL], [KHUYENMAI], [GIABAN]) VALUES (N'HD001', N'VT01', 5, 0, 52000)
+INSERT [dbo].[CTHD] ([MAHD], [MAVT], [SL], [KHUYENMAI], [GIABAN]) VALUES (N'HD001', N'VT05', 10, 0, 30000)
+INSERT [dbo].[CTHD] ([MAHD], [MAVT], [SL], [KHUYENMAI], [GIABAN]) VALUES (N'HD002', N'VT03', 10000, 15, 150)
+INSERT [dbo].[CTHD] ([MAHD], [MAVT], [SL], [KHUYENMAI], [GIABAN]) VALUES (N'HD003', N'VT02', 20, 0, 55000)
+INSERT [dbo].[CTHD] ([MAHD], [MAVT], [SL], [KHUYENMAI], [GIABAN]) VALUES (N'HD004', N'VT03', 50000, 15, 150)
+INSERT [dbo].[CTHD] ([MAHD], [MAVT], [SL], [KHUYENMAI], [GIABAN]) VALUES (N'HD004', N'VT04', 20000, 12, 120)
+INSERT [dbo].[CTHD] ([MAHD], [MAVT], [SL], [KHUYENMAI], [GIABAN]) VALUES (N'HD005', N'VT05', 10, 0, 30000)
+INSERT [dbo].[CTHD] ([MAHD], [MAVT], [SL], [KHUYENMAI], [GIABAN]) VALUES (N'HD005', N'VT06', 15, 0, 35000)
+INSERT [dbo].[CTHD] ([MAHD], [MAVT], [SL], [KHUYENMAI], [GIABAN]) VALUES (N'HD005', N'VT07', 20, 0, 17000)
+INSERT [dbo].[CTHD] ([MAHD], [MAVT], [SL], [KHUYENMAI], [GIABAN]) VALUES (N'HD006', N'VT04', 10000, 12, 120)
+INSERT [dbo].[CTHD] ([MAHD], [MAVT], [SL], [KHUYENMAI], [GIABAN]) VALUES (N'HD007', N'VT04', 20000, 12.5, 125)
+INSERT [dbo].[CTHD] ([MAHD], [MAVT], [SL], [KHUYENMAI], [GIABAN]) VALUES (N'HD008', N'VT01', 100, 0, 55000)
+INSERT [dbo].[CTHD] ([MAHD], [MAVT], [SL], [KHUYENMAI], [GIABAN]) VALUES (N'HD008', N'VT02', 20, 0, 47000)
+INSERT [dbo].[CTHD] ([MAHD], [MAVT], [SL], [KHUYENMAI], [GIABAN]) VALUES (N'HD009', N'VT02', 25, 0, 48000)
+INSERT [dbo].[CTHD] ([MAHD], [MAVT], [SL], [KHUYENMAI], [GIABAN]) VALUES (N'HD010', N'VT01', 25, 0, 57000)
+GO
+
+--6.Hiển thị danh sách các vật tư gồm mã vật tư, tên vật tư, đơn vị tính và giá mua mà có giá mua trên 25000.
+CREATE VIEW CAU6([MÃ VẬT TƯ],[TÊN VẬT TƯ],[ĐƠN VỊ TÍNH],[GIÁ MUA])
+AS
+	SELECT MAVT,TENVT,DVT,GIAMUA
+	FROM VATTU
+	WHERE GIAMUA>25000
+
+SELECT * FROM CAU6
+
+--10.	Lấy ra các thông tin gồm Mã hóa đơn, tên khách hàng, địa chỉ khách hàng và số điện thoại của ngày 25/5/2010.
+CREATE VIEW CAU10
+AS
+    SELECT B.MAHD, A.TENKH, A.DIACHI, A.DT, B.NGAY
+    FROM KHACHHANG A
+    INNER JOIN HOADON B ON A.MAKH = B.MAKH
+    WHERE B.NGAY = '2010-05-25';
+
+SELECT * FROM CAU10
+
+--16.	Lấy ra các thông tin gồm mã hóa đơn, mã vật tư, tên vật tư, đơn vị tính, giá bán, giá mua, số lượng, 
+--trị giá mua (giá mua * số lượng), 
+--trị giá bán (giá bán * số lượng) và cột khuyến mãi với khuyến mãi 10% cho những mặt hàng bán trong một hóa đơn lớn hơn 100.
+CREATE VIEW V16
+AS 
+	SELECT B.MAHD,A.MAVT,A.TENVT,A.DVT,B.GIABAN,A.GIAMUA,TRIGIAMUA=A.GIAMUA*SL,TRIGIABAN=SL*B.GIABAN,KHUYENMAI=IIF(SL>100,0.1*SL*GIABAN,0)
+	FROM VATTU A, CTHD B
+	WHERE A.MAVT = B.MAVT
+
+SELECT * FROM V16
+
+--21.	Lấy ra danh sách các hóa đơn gồm các thông tin: Số hóa đơn, ngày, tên khách hàng, địa chỉ khách hàng, tổng trị giá của hóa đơn.
+CREATE VIEW V21
+AS
+	SELECT B.MAHD,NGAY,TENKH,DIACHI,TONGGIATRI=SUM(SL*GIABAN)
+	FROM KHACHHANG A, HOADON B, CTHD C
+	WHERE A.MAKH = B.MAKH AND B.MAHD = C.MAHD
+	GROUP BY B.MAHD,NGAY,TENKH,DIACHI
+SELECT * FROM V21
+
+--1.	Hiển thị danh sách các khách hàng có địa chỉ là “Tân Bình” gồm mã khách hàng, tên khách hàng, địa chỉ, điện thoại, và địa chỉ E-mail.
+CREATE VIEW V1
+AS
+	SELECT MAKH,TENKH,DIACHI,DT,EMAIL
+	FROM KHACHHANG
+	WHERE DIACHI = 'Tân Bình'
+SELECT * FROM V1
+
+--2.	Hiển thị danh sách các khách hàng gồm các thông tin mã khách hàng, tên khách hàng, địa chỉ và địa chỉ E-mail của những khách hàng chưa có số điện thoại.
+CREATE VIEW V2
+AS
+	SELECT MAKH,TENKH,DIACHI,EMAIL
+	FROM KHACHHANG
+	WHERE DT IS NULL
+SELECT * FROM V2
+
+--3.	Hiển thị danh sách các khách hàng chưa có số điện thoại và cũng chưa có địa chỉ Email gồm mã khách hàng, tên khách hàng, địa chỉ.
+CREATE VIEW V3
+AS
+	SELECT MAKH,TENKH,DIACHI
+	FROM KHACHHANG
+	WHERE DT IS NULL AND EMAIL IS NULL
+SELECT * FROM V3
+
+--4.	Hiển thị danh sách các khách hàng đã có số điện thoại và địa chỉ E-mail gồm mã khách hàng, tên khách hàng, địa chỉ, điện thoại, và địa chỉ E-mail.
+CREATE VIEW V4
+AS
+	SELECT MAKH,TENKH,DIACHI,DT,EMAIL
+	FROM KHACHHANG
+	WHERE DT IS NOT NULL AND EMAIL IS NOT NULL
+SELECT * FROM V4
+
+--5.	Hiển thị danh sách các vật tư có đơn vị tính là “Cái” gồm mã vật tư, tên vật tư và giá mua.
+CREATE VIEW V5
+AS
+	SELECT MAVT,TENVT,GIAMUA
+	FROM VATTU
+	WHERE DVT='Cái'
+SELECT * FROM V5
+
+--24.	Đếm xem mỗi khách hàng có bao nhiêu hóa đơn.
+CREATE VIEW V24
+AS
+	SELECT A.MAKH,TENKH,SOHOADON=COUNT(MAHD)
+	FROM KHACHHANG A, HOADON B
+	WHERE A.MAKH=B.MAKH
+	GROUP BY A.MAKH,TENKH
+	ORDER BY SOHOADON DESC
+SELECT * FROM V24
+
+--20.	Tạo bảng tổng hợp quý 1 – 2010 gồm các thông tin: mã hóa đơn, ngày hóa đơn, tên khách hàng, địa chỉ, số điện thoại, tên vật tư, đơn vị tính, giá mua, giá bán, số lượng, trị giá mua, trị giá bán. 
+SELECT A.MAHD,NGAY,TENKH,DIACHI,DT,TENVT,DVT,GIAMUA,GIABAN,SL,TRIGIAMUA=SL*GIAMUA,TRIGIABAN=SL*GIABAN
+INTO BANGTONGHOPQUY1
+FROM HOADON A, KHACHHANG B, VATTU C, CTHD D
+WHERE A.MAKH = B.MAKH AND A.MAHD = D.MAHD AND D.MAVT=C.MAVT AND DATEPART (Q,NGAY)=1
+SELECT * FROM BANGTONGHOPQUY1
+
+--SAO LUU 
+BACKUP DATABASE QLBH
+TO DISK = 'D:\SQL\BANHANG.BAK'
+
+--PHUC HOI
+RESTORE DATABASE QLBH
+FROM DISK ='D:\SQL\BANHANG.BAK'
