@@ -1,72 +1,102 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
- */
-package oopjva;
-import java.util.Scanner;
-/**
- *
- * @author daoho
- */
-public class bt5 {
+CREATE TRIGGER TR_KIEMTRATRUNGTENVATTU
+ON VATTU
+FOR INSERT,UPDATE
+AS
+BEGIN
+	--KIỂM TRA XUẤT HIỆN 2 LẦN>1
+	IF (SELECT COUNT(A.TENVT) FROM VATTU A, inserted B WHERE A.TENVT=B.TENVT)>1
+		BEGIN
+			RAISERROR(N'TRÙNG TÊN VẬT TƯ',16,1)
+			ROLLBACK TRANSACTION --HUỶ GIAO TÁC
+		END
+	ELSE
+		PRINT N'THÊM THÀNH CÔNG'
+END
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        // TODO code application logic here
-        long N= 56789;
-        int chusoDau=0;
-        while (N>0){
-            chusoDau=(int)(N%10);
-            N/=10;
-        }
-        System.out.println("the first number of N is: "+chusoDau);
-    }
+INSERT VATTU VALUES('VT08',N'ĐINH','KG',25000,1000)
+
+--2.Không cho phép CASCADE DELETE trong các ràng buộc khóa ngoại. 
+--Ví dụ không cho phép xóa các HOADON nào có SOHD còn trong table CTHD.
+
+CREATE TRIGGER TRG_KIEMTRA_CTHD
+ON HOADON
+FOR DELETE
+AS
+BEGIN
+	DECLARE @MAHD VARCHAR(10)
+	SET @MAHD=(SELECT MAHD FROM deleted)
+
+	IF EXISTS(SELECT MAHD FROM CTHD WHERE MAHD=@MAHD)
+		BEGIN
+			RAISERROR(N'ĐÃ TỒN TẠI CHI TIẾT HOÁ ĐƠN',16,1)
+			ROLLBACK TRANSACTION --HUỶ GIAO TÁC
+		END
+	ELSE
+		PRINT N'XOÁ THÀNH CÔNG HOÁ ĐƠN HUỶ'
+END
+
+DELETE FROM HOADON WHERE MAHD='HD011'
+
+--4. Khi user đặt hàng thì KHUYENMAI là 5% nếu SL > 100, 10% nếu SL > 500.
+
+CREATE TRIGGER TRG_TUDONGCAPNHATKHUYENMAI
+ON CTHD
+FOR INSERT,UPDATE
+AS
+BEGIN
+	UPDATE CTHD
+	SET KHUYENMAI =IIF(SL>500,0.1*SL*GIABAN,IIF(SL>100,0.05*SL*GIABAN,0)) 
+END
+
+--TỰ ĐỘNG CẬP NHẬT TỔNG TRỊ GIÁ HOÁ ĐƠN
+
+CREATE TRIGGER TRG_CAPNHATTONGTRIGIAHOADON
+ON CTHD
+FOR INSERT,UPDATE
+AS
+BEGIN
+	UPDATE HOADON
+	SET TONGTG=(SELECT SUM(SL*GIABAN) FROM CTHD WHERE CTHD.MAHD=HOADON.MAHD)
+END
+
+--XOÁ TRIGGER 
+DROP TRIGGER TRG_CAPNHATTONGTRIGIAHOADON
 
 
-public class Main {
-    public static void main(String[] args) {
-      // TODO code application logic here
-        long N= 56789;
-      int  sum= 0;
-        for (int i=0;i<N%10; i++)
-        {
-        sum += N%10;
-           }
-        
+--KIỂM TRA SỐ LƯỢNG BÁN (TRONG CTHD) KHÔNG ĐƯỢC VƯỢT QUÁ SỐ LƯỢNG TỒN (TRONG VATTU).
+--CẬP NHẬT LẠI SỐ LƯỢNG TỒN KHO KHI ĐÃ BÁN
+CREATE TRIGGER TRG_KIEMTRAVACAPNHAT_SOLUONGTONKHO
+ON CTHD
+FOR INSERT,UPDATE
+AS
+BEGIN
+	DECLARE @MAVT VARCHAR(10),@SLBAN INT
+	SELECT @MAVT=MAVT,@SLBAN=SL FROM inserted
 
-System.out.println("Tổng các chữ số của N là: " + sum);
- 
-    
-                                    }
-                    }
+	IF(@SLBAN >(SELECT SLTON FROM VATTU WHERE MAVT=@MAVT))
+		BEGIN
+			RAISERROR(N'KHÔNG ĐỦ HÀNG TRONG KHO',16,1)
+			ROLLBACK TRANSACTION --HUỶ GIAO TÁC
+		END
+	ELSE
+		UPDATE VATTU
+		SET SLTON=SLTON-@SLBAN
+		WHERE MAVT=@MAVT
+END
 
-public class Main {
-     public static void main(String[] args) {
+--7.Mỗi hóa đơn cho phép bán tối đa 3 mặt hàng.
+ALTER TRIGGER TRG_KIEMTRACTHD3MATHANG
+ON CTHD
+FOR INSERT,UPDATE
+AS
+BEGIN
+	DECLARE @MAHD VARCHAR(10)
+	SET @MAHD=(SELECT MAHD FROM inserted)
 
-long N = 12343765;
-int maxDigit = 0;
-    while( N>0)  {
-    int digit = (int) (N % 10);
-    if (digit > maxDigit) {
-        maxDigit = digit;
-    }
-    N /= 10;
-            }
-    System.out.println("Chữ số lớn nhất trong k chữ số của N là: " + maxDigit);
-
-}
-     public class Main {
-     public static void main(String[] args) {
-long N = 123456789;
-int count = 0;
-while (N > 0) {
-    count++;
-    N /= 10;
-}
-System.out.println("Số chữ số của N là: " + count);
-
-}
-     }
+    IF(SELECT COUNT(MAVT) FROM CTHD WHERE MAHD=@MAHD)>3
+		BEGIN
+			RAISERROR(N'MỖI HOÁ ĐƠN CHỈ BÁN TỐI ĐA 3 MẶT HÀNG',16,1)
+			ROLLBACK TRANSACTION --HUỶ GIAO TÁC
+		END
+END
 
